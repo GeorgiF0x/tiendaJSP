@@ -97,7 +97,7 @@ public class CarritoDAO {
 
 	    if (conn != null) {
 	        System.out.println("Conexión establecida con éxito.");
-	        String sql = "UPDATE carrito SET cantidad = cantidad + ?  WHERE idUsuario = ? AND idArticulo = ? AND cantidad >= ?";
+	        String sql = "UPDATE carrito SET cantidad = cantidad + ? WHERE idUsuario = ? AND idArticulo = ?";
 	        String updateStockSql = "UPDATE articulos SET cantidad = cantidad - ? WHERE idArticulo = ? AND cantidad >= ?";
 	        
 	        try {
@@ -106,7 +106,7 @@ public class CarritoDAO {
 
 	            // Actualizar carrito
 	            try (PreparedStatement pstmtCarrito = conn.prepareStatement(sql)) {
-	                pstmtCarrito.setInt(1, carrito.getCantidad()); // Nueva cantidad
+	                pstmtCarrito.setInt(1, carrito.getCantidad()); // Nueva cantidad a sumar
 	                pstmtCarrito.setInt(2, carrito.getIdUsuario()); // ID de usuario
 	                pstmtCarrito.setInt(3, carrito.getIdProducto()); // ID de producto
 	                
@@ -121,7 +121,7 @@ public class CarritoDAO {
 	                }
 	            }
 
-	            /* Actualizar stock del producto
+	            // Actualizar stock del producto (opcional)
 	            try (PreparedStatement pstmtStock = conn.prepareStatement(updateStockSql)) {
 	                pstmtStock.setInt(1, carrito.getCantidad()); // Cantidad a restar
 	                pstmtStock.setInt(2, carrito.getIdProducto()); // ID de producto
@@ -134,8 +134,12 @@ public class CarritoDAO {
 	                    return null;
 	                }
 	            }
-	            */
-	            
+
+	            // Confirmar la transacción si todo va bien
+	            conn.commit();
+	        } catch (SQLException e) {
+	            System.out.println("Error durante la actualización: " + e.getMessage());
+	            conn.rollback(); // Revertir en caso de error
 	        } finally {
 	            Conexion.desconectar(); 
 	        }
@@ -145,6 +149,7 @@ public class CarritoDAO {
 
 	    return carritoActualizado; 
 	}
+
 	
 	public static Carrito insertCarrito(Carrito carrito) throws SQLException {
 	    Carrito carritoInsertado = null; // Variable para almacenar el carrito insertado

@@ -41,7 +41,7 @@
                            class="form-control" placeholder="Cantidad" required>
                 </div>
                 
-                <button type="submit" class="btn btn-primary">Añadir al Carrito</button>
+                <button type="submit" class="btn btn-primary" name="addCarrito">Añadir al Carrito</button>
             </form>
         </div>
     </div>

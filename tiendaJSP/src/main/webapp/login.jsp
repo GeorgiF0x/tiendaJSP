@@ -131,34 +131,59 @@
 </head>
 <body>
 
-    <div class="container">
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('login')">Iniciar Sesión</div>
-            <div class="tab" onclick="switchTab('register')">Registrarse</div>
-        </div>
+	<%
+	Cookie[] cookies = request.getCookies();
+	if (cookies != null) {
+	    for (Cookie cookie : cookies) {
+	        if (cookie.getName().equals("recordar")) { //buscar la cookie que quiero manejar 
+	            request.setAttribute("nombreGuardado", cookie.getValue());
+	            break;
+	        }
+	    }
+	}
+	%>
 
-        <!-- Login Form -->
-        <div class="form-container active" id="login-form">
-            <h2>Iniciar Sesión</h2>
-            <form action="loginServlet" method="POST">
-                <div class="input-group">
-                    <label for="username">Nombre de Usuario</label>
-                    <input type="text" id="username" name="user" required>
-                </div>
-                <div class="input-group">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="pass" required>
-                </div>
+ <div class="container">
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('login')">Iniciar Sesión</div>
+        <div class="tab" onclick="switchTab('register')">Registrarse</div>
+    </div>
+
+    <!-- Login Form -->
+    <div class="form-container active" id="login-form">
+        <h2>Iniciar Sesión</h2>
+        <form action="loginServlet" method="POST">
+            <div class="input-group">
+                <label for="username">Nombre de Usuario</label>
+                	
+			  <input type="text" id="username" name="user" required 
+			    value="<%= request.getAttribute("nombreGuardado") != null ? request.getAttribute("nombreGuardado") : "" %>">
+            </div>
+            <div class="input-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="pass" re quired>
+            </div>
+            <div class="input-group">
+                <label>
+                    <input type="checkbox" name="recordar" id="rememberUser">
+                    Recordar nombre de usuario
+                </label>
+            </div>
+            <div class="form-actions">
                 <button type="submit" class="login-button">Acceder</button>
                 <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                <% String mensaje;
-                   if(request.getAttribute("error") != null){
-                      mensaje = (String)request.getAttribute("error");           
-                 %>
-                 <p class="error-message"><%=mensaje %></p>
-                 <% } %>
-            </form>
-        </div>
+            </div>
+            <% 
+                String mensaje;
+                if (request.getAttribute("error") != null) {
+                    mensaje = (String) request.getAttribute("error");
+            %>
+            <p class="error-message"><%= mensaje %></p>
+            <% } %>
+        </form>
+    </div>
+</div>
+
 
         <!-- Register Form -->
         <div class="form-container" id="register-form">

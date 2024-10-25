@@ -42,32 +42,42 @@ public class carritoServlet extends HttpServlet {
 	    }
 		//Combrobar si esta en el carrito
 		try {
-			Carrito inCarrito=CarritoDAO.getByUserProductId(usuarioId,idproducto);
-			if(inCarrito!=null) {
-				//actualizar los valores del carrito
-				inCarrito.setCantidad(cantidadAddCarrito);
-				CarritoDAO.updateCarrito(inCarrito);
-				request.getSession().setAttribute("carritoUser", inCarrito);
-				request.setAttribute("info", "Producto añadido al carrito");
-				System.out.println(inCarrito.toString());
-			}else {
-				Carrito nuevoCarrito= new Carrito(idproducto, idproducto, cantidadAddCarrito);
-				Carrito insertado= CarritoDAO.insertCarrito(nuevoCarrito);
-				
-				if (insertado != null) {
-			        System.out.println("Inserción exitosa: " + insertado);
-			        //actualizar la sesion con el carrito
-			    	request.setAttribute("info", "Producto añadido al carrito");
-			    	request.getSession().setAttribute("carritoUser", insertado);
-			    	System.out.println(insertado.toString());
-			    } else {
-			        System.out.println("Error al insertar el carrito.");
-			    }
-			}
+		    Carrito inCarrito = CarritoDAO.getByUserProductId(usuarioId, idproducto);
+		    
+		    if (inCarrito != null) {
+		        // Sumar la cantidad nueva a la cantidad existente en el carrito
+		        int nuevaCantidad = inCarrito.getCantidad() + cantidadAddCarrito;
+		        inCarrito.setCantidad(nuevaCantidad); // Actualiza la cantidad del carrito
+
+		        // Llama a updateCarrito y verifica si se actualiza
+		        Carrito carritoActualizado = CarritoDAO.updateCarrito(inCarrito);
+		        if (carritoActualizado != null) {
+		            request.getSession().setAttribute("carritoUser", carritoActualizado);
+		            request.setAttribute("info", "Producto añadido al carrito");
+		            System.out.println(carritoActualizado.toString());
+		        } else {
+		            request.setAttribute("error", "Error al actualizar el carrito.");
+		        }
+		    } else {
+		        // Si el carrito no existe, crear uno nuevo
+		        Carrito nuevoCarrito = new Carrito(usuarioId, idproducto, cantidadAddCarrito); // Asegúrate de que estás usando los parámetros correctos
+		        Carrito insertado = CarritoDAO.insertCarrito(nuevoCarrito);
+
+		        if (insertado != null) {
+		            System.out.println("Inserción exitosa: " + insertado);
+		            // Actualizar la sesión con el carrito
+		            request.setAttribute("info", "Producto añadido al carrito");
+		            request.getSession().setAttribute("carritoUser", insertado);
+		            System.out.println(insertado.toString());
+		        } else {
+		            System.out.println("Error al insertar el carrito.");
+		        }
+		    }
 		} catch (SQLException e) {
-			request.setAttribute("error", "Error en la base de datos.");
-			e.printStackTrace();
+		    request.setAttribute("error", "Error en la base de datos.");
+		    e.printStackTrace();
 		}
+
 
 		   response.sendRedirect(request.getContextPath() + "/");
 	}

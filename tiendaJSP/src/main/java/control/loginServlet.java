@@ -2,13 +2,16 @@ package control;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import control.servicios.ServicioValidacionesForm;
 import modelo.Carrito;
 import modelo.CarritoDAO;
 import modelo.User;
@@ -42,35 +45,50 @@ public class loginServlet extends HttpServlet {
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 	    try {
+	    	ArrayList<String> listaCampos = new ArrayList<>();
+
 	        String nombre = request.getParameter("user");
 	        String password = request.getParameter("pass");
 	        
+	        String checkRecordar= request.getParameter("recordar");
+	        
+	        Cookie cookieRecordar = new Cookie("recordar", nombre);
+	        if (checkRecordar != null) {
+	        	System.out.println("Checkbox 'recordar' está seleccionado.");
+	        	 cookieRecordar.setMaxAge(60 * 60 * 24*365); //recuerde la contraseña todo el año
+	        	 response.addCookie(cookieRecordar);
+	        } else {
+	            // El checkbox no está marcado
+	        	cookieRecordar.setMaxAge(0); // si la desmarcan ya no recuerda
+	            response.addCookie(cookieRecordar);
+	            System.out.println("Checkbox 'recordar' no está seleccionado.");
+	        }
+	        
 	        // Validación básica de longitud
 	        if (nombre.length() < 4 || password.length() < 4) {
-	            // Si no cumple la validación de longitud, setea el mensaje de error
+	       
 	            request.setAttribute("resultadoValidacion", "Rellena con al menos 6 caracteres.");
 	        } else {
-	            // Si la longitud es válida, validar el usuario contra la base de datos
+	   
 	        	System.out.println("validacion de longitud de cadena correcta");
-	            User alumno = UserDAO.validateUser(nombre, password); // Cambiar a objeto Alumn
+	            User alumno = UserDAO.validateUser(nombre, password); 
 	            
-	            if (alumno != null) { // Comprueba si el alumno no es nulo
+	            if (alumno != null) { 
 	            	System.out.println("validacion login correcta");
-	                // Si el usuario es válido, almacenar el ID y el nombre en la sesión
+	             
 	                request.getSession().setAttribute("usuarioId", alumno.getId());
 	                request.getSession().setAttribute("usuarioNombre", alumno.getNombre());
 	                
-	                //comprobar carrito
+	                
 	                Carrito carroUser=CarritoDAO.getByUserId(alumno.getId());
 	                if(carroUser!=null) {
 	                	request.getSession().setAttribute("carritoUser", carroUser);
 	                }
 
-	                // Redirige a la página de respuesta con el mensaje de éxito
 	           
 	                request.setAttribute("resultado", nombre + " INICIO DE SESION CORRECTO");
 	            } else {
-	                // Si el usuario no es válido, setea el mensaje de error
+	               
 	                request.setAttribute("resultadoValidacion", "Usuario o contraseña incorrectos.");
 	            }
 	        }
