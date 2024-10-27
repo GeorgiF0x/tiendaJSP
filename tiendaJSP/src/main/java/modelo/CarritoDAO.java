@@ -5,50 +5,43 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 import conexion.Conexion;
 
 
 public class CarritoDAO {
 	
-	public static  Carrito getByUserId(int id) throws SQLException {
+	public static List<Carrito> getByUserId(int id) throws SQLException {
+	    List<Carrito> carritos = new ArrayList<>();
+	    Connection conn = Conexion.getConexion();
 
-		Carrito carrito= new Carrito();
-		//instanciar clase Connection usando el metodo de la clase conexion 
-		 Connection conn = Conexion.getConexion();
-	        //comprobar si se ha instanicado con el metodo correctamente
-	        if (conn != null) {
-	            System.out.println("Conexión establecida con éxito.");
-	            String sql="Select * from carrito where idUsuario = ?";
-	            //crear un objeto preparedStatement al que se le pasa una cadena con el sql preparado
-	            PreparedStatement pstmt = conn.prepareStatement(sql);
-	            pstmt.setInt(1, id);
-	            //crear objeto resultSet para manipular los datos ejecutando el statment
-	            ResultSet rs = pstmt.executeQuery();
-	            if (!rs.isBeforeFirst()) {    
-	                // Si no hay registros, mostrar mensaje
-	                System.out.println("No hay registros disponibles.");
-	            } else {
-	                while(rs.next()) {
-	                	
-	                    int idCarrito = rs.getInt(1);
-	                    int idUsuario = rs.getInt(2);
-	                    int idProducto = rs.getInt(3);
-	                    int cantidad = rs.getInt(4);
-	   
-		                
-		                carrito =  new Carrito(idCarrito, idUsuario, idProducto, cantidad);
-	                   
-	                }
-	                Conexion.desconectar();
-	            }
-	     
-	        } else {
-	            System.out.println("No se pudo establecer la conexión.");
+	    if (conn != null) {
+	        String sql = "SELECT * FROM carrito WHERE IdUsuario = ?";
+	        PreparedStatement pstmt = conn.prepareStatement(sql);
+	        pstmt.setInt(1, id);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        while (rs.next()) {
+	            int idCarrito = rs.getInt("Id");
+	            int idUsuario = rs.getInt("IdUsuario");
+	            int idProducto = rs.getInt("idArticulo");
+	            int cantidad = rs.getInt("Cantidad");
+
+	            Carrito carrito = new Carrito(idCarrito, idUsuario, idProducto, cantidad);
+	            carritos.add(carrito);
 	        }
-	        
-			return carrito;
+
+	        rs.close();
+	        pstmt.close();
+	        Conexion.desconectar();
+	    }
+
+	    return carritos;
 	}
+
+
 	
 	public static Carrito getByUserProductId(int idUsuario, int idProducto) throws SQLException {
 	    Carrito carrito = null; // Cambiar a null por defecto
@@ -97,19 +90,18 @@ public class CarritoDAO {
 
 	    if (conn != null) {
 	        System.out.println("Conexión establecida con éxito.");
-	        String sql = "UPDATE carrito SET cantidad = cantidad + ? WHERE idUsuario = ? AND idArticulo = ?";
-	        String updateStockSql = "UPDATE articulos SET cantidad = cantidad - ? WHERE idArticulo = ? AND cantidad >= ?";
+	        String sql = "UPDATE carrito SET cantidad = ? WHERE idUsuario = ? AND idArticulo = ?";
 	        
 	        try {
 	            // Iniciar la transacción
 	            conn.setAutoCommit(false); 
 
-	            // Actualizar carrito
+	            // Actualizar carrito con la cantidad exacta
 	            try (PreparedStatement pstmtCarrito = conn.prepareStatement(sql)) {
-	                pstmtCarrito.setInt(1, carrito.getCantidad()); // Nueva cantidad a sumar
+	                pstmtCarrito.setInt(1, carrito.getCantidad()); // Cantidad exacta
 	                pstmtCarrito.setInt(2, carrito.getIdUsuario()); // ID de usuario
 	                pstmtCarrito.setInt(3, carrito.getIdProducto()); // ID de producto
-	                
+
 	                int filasActualizadasCarrito = pstmtCarrito.executeUpdate();
 	                if (filasActualizadasCarrito > 0) {
 	                    System.out.println("Carrito actualizado con éxito.");
@@ -117,20 +109,6 @@ public class CarritoDAO {
 	                } else {
 	                    System.out.println("No se encontró el carrito para actualizar.");
 	                    conn.rollback(); // Revertir si no se actualiza el carrito
-	                    return null;
-	                }
-	            }
-
-	            // Actualizar stock del producto (opcional)
-	            try (PreparedStatement pstmtStock = conn.prepareStatement(updateStockSql)) {
-	                pstmtStock.setInt(1, carrito.getCantidad()); // Cantidad a restar
-	                pstmtStock.setInt(2, carrito.getIdProducto()); // ID de producto
-	                pstmtStock.setInt(3, carrito.getCantidad()); // Asegurarse que haya suficiente stock
-
-	                int filasActualizadasStock = pstmtStock.executeUpdate();
-	                if (filasActualizadasStock <= 0) {
-	                    System.out.println("No se pudo actualizar el stock del producto.");
-	                    conn.rollback(); // Revertir si no se actualiza el stock
 	                    return null;
 	                }
 	            }
@@ -149,6 +127,7 @@ public class CarritoDAO {
 
 	    return carritoActualizado; 
 	}
+
 
 	
 	public static Carrito insertCarrito(Carrito carrito) throws SQLException {

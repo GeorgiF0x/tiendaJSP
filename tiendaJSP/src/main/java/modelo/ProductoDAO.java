@@ -24,7 +24,6 @@ public class ProductoDAO {
 	        String sql = "SELECT * FROM articulos";
 	        PreparedStatement pstmt = conn.prepareStatement(sql);
 	        
-	        // Crear objeto ResultSet para manipular los datos ejecutando el preparedStatement
 	        ResultSet rs = pstmt.executeQuery(); // Cambiado a executeQuery
 	        
 	        // Verificar si hay registros
@@ -43,7 +42,7 @@ public class ProductoDAO {
 	            }
 	        }
 	        
-	        // Cerrar recursos
+
 	        Conexion.desconectar();
 	        rs.close();
 	        pstmt.close();
@@ -54,39 +53,116 @@ public class ProductoDAO {
 	    return listaProductos;
 	}
 	
-	public static  ProductoVO getById(int id) throws SQLException {
+	public static ProductoVO getById(int id) throws SQLException {
+	    ProductoVO producto = null;
+	    Connection conn = Conexion.getConexion();
 
-		ProductoVO producto= new ProductoVO();
-		//instanciar clase Connection usando el metodo de la clase conexion 
-		 Connection conn = Conexion.getConexion();
-	        //comprobar si se ha instanicado con el metodo correctamente
-	        if (conn != null) {
-	            System.out.println("Conexión establecida con éxito.");
-	            String sql="Select * from articulos where id = ?";
-	            //crear un objeto preparedStatement al que se le pasa una cadena con el sql preparado
-	            PreparedStatement pstmt = conn.prepareStatement(sql);
-	            pstmt.setInt(1, id);
-	            //crear objeto resultSet para manipular los datos ejecutando el statment
-	            ResultSet rs = pstmt.executeQuery();
-	            if (!rs.isBeforeFirst()) {    
-	                // Si no hay registros, mostrar mensaje
-	                System.out.println("No hay registros disponibles.");
-	            } else {
-	                while(rs.next()) {
-	                    int idProducto = rs.getInt(1);
-	                    String nombre = rs.getString(2);
-	                    Double precio= rs.getDouble(3);
-	                    int cantidad = rs.getInt(4);
-		                producto = new ProductoVO(idProducto, nombre,precio,cantidad);
-	                   
-	                }
-	            }
-	     
-	        } else {
-	            System.out.println("No se pudo establecer la conexión.");
+	    if (conn != null) {
+	        String sql = "SELECT * FROM articulos WHERE idArticulo = ?";
+	        PreparedStatement pstmt = conn.prepareStatement(sql);
+	        pstmt.setInt(1, id);
+	        ResultSet rs = pstmt.executeQuery();
+
+	        if (rs.next()) {
+	            int idProducto = rs.getInt("idArticulo");
+	            String nombre = rs.getString("nombre");
+	            double precio = rs.getDouble("precio");
+	            int cantidad = rs.getInt("cantidad");
+	            producto = new ProductoVO(idProducto, nombre, precio, cantidad);
 	        }
-	        
-			return producto;
+
+	        rs.close();
+	        pstmt.close();
+	        Conexion.desconectar();
+	    }
+
+	    return producto;
 	}
+
+	
+	public static boolean tramitarCompra(List<Carrito> carritos, int idUsuario) throws SQLException {
+	    Connection conn = null; 
+	    PreparedStatement pstmt = null; 
+	    ResultSet rs = null;
+
+	    try {
+	   
+	        conn = Conexion.getConexion();
+	        conn.setAutoCommit(false); 
+
+	        // Primero, verificamos y actualizamos el stock
+	        for (Carrito carrito : carritos) {
+	            // Obtener el producto
+	            String queryProducto = "SELECT cantidad, nombre FROM articulos WHERE idArticulo = ?";
+	            try (PreparedStatement stmt = conn.prepareStatement(queryProducto)) {
+	                stmt.setInt(1, carrito.getIdProducto()); 
+	                rs = stmt.executeQuery();
+
+	                if (!rs.next()) {
+	                    throw new SQLException("Producto no encontrado con ID: " + carrito.getIdProducto());
+	                }
+
+	                int cantidadActual = rs.getInt("cantidad");
+	                String nombreProducto = rs.getString("nombre");
+
+	                if (cantidadActual < carrito.getCantidad()) {
+	                    throw new SQLException("No hay suficiente stock para el producto: " + nombreProducto);
+	                }
+
+	                // Actualizar el stock
+	                int nuevoStock = cantidadActual - carrito.getCantidad();
+	                String updateStockQuery = "UPDATE articulos SET cantidad = ? WHERE idArticulo = ?";
+	                pstmt = conn.prepareStatement(updateStockQuery);
+	                pstmt.setInt(1, nuevoStock);
+	                pstmt.setInt(2, carrito.getIdProducto());
+	                pstmt.executeUpdate();
+	            }
+	        }
+
+	        // Vaciar el carrito después de procesar las compras
+	        String vaciarCarritoQuery = "DELETE FROM carrito WHERE IdUsuario = ?";
+	        pstmt = conn.prepareStatement(vaciarCarritoQuery);
+	        pstmt.setInt(1, idUsuario);
+	        pstmt.executeUpdate();
+
+	    
+	        conn.commit(); 
+	        return true; 
+
+	    } catch (SQLException e) {
+	        e.printStackTrace();
+
+	       
+	        if (conn != null) {
+	            try {
+	                conn.rollback(); 
+	            } catch (SQLException ex) {
+	                ex.printStackTrace();
+	            }
+	        }
+	        return false; 
+	    } finally {
+	    
+	        if (pstmt != null) {
+	            try {
+	                pstmt.close(); 
+	            } catch (SQLException e) {
+	                e.printStackTrace(); 
+	            }
+	        }
+	        if (rs != null) {
+	            try {
+	                rs.close(); 
+	            } catch (SQLException e) {
+	                e.printStackTrace(); 
+	            }
+	        }
+	        if (conn != null) {
+	            Conexion.desconectar(); 
+	        }
+	    }
+	}
+
+
 
 }

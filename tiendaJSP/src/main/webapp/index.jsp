@@ -18,6 +18,16 @@
     <section class="main container mt-5">
         <h1 class="text-center">Catálogo de Productos</h1>
         <!-- Cards -->
+        <%
+        String mensaje = (String) request.getAttribute("mensaje");
+        if (mensaje != null) {
+        %>
+            <div class="alert alert-success" role="alert">
+                <strong><%= mensaje %></strong>
+            </div>
+        <%
+        }
+        %>
         <div class="row">
             <%
             if (request.getAttribute("catalogo") != null) {
@@ -26,25 +36,29 @@
             %>
           <div class="col-md-4 mb-4">
     <div class="card">
-        <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="<%= producto.getNombre() %>">
-        <div class="card-body">
-            <h5 class="card-title"><%= producto.getNombre() %></h5>
-            <p class="card-text">Precio: <strong>$<%= producto.getPrecio() %></strong></p>
-            <p class="card-text">Cantidad en stock: <strong><%= producto.getCantidad() %></strong></p>
+    <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="<%= producto.getNombre() %>">
+    <div class="card-body">
+        <h5 class="card-title"><%= producto.getNombre() %></h5>
+        <p class="card-text">Precio: <strong>$<%= producto.getPrecio() %></strong></p>
+        <p class="card-text">Cantidad en stock: <strong><%= producto.getCantidad() %></strong></p>
+        
+
+        
+        <form action="carritoServlet" method="post" class="d-flex align-items-center">
+            <input type="hidden" name="producto_id" value="<%= producto.getId() %>">
+             <input type="hidden" name="producto_nombre" value="<%= producto.getNombre() %>">
             
-            <form action="carritoServlet" method="post" class="d-flex align-items-center">
-                <input type="hidden" name="producto_id" value="<%= producto.getId() %>">
-                
-                <!-- Input para la cantidad -->
-                <div class="input-group me-2">
-                    <input type="number" name="cantidad" min="1" max="<%= producto.getCantidad() %>" 
-                           class="form-control" placeholder="Cantidad" required>
-                </div>
-                
-                <button type="submit" class="btn btn-primary" name="addCarrito">Añadir al Carrito</button>
-            </form>
-        </div>
+          
+            <div class="input-group me-2">
+                <input type="number" name="cantidad" min="1" max="<%= producto.getCantidad() %>" 
+                       class="form-control" placeholder="Cantidad" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" name="addCarrito">Añadir al Carrito</button>
+        </form>
     </div>
+</div>
+
 </div>
 
 
